@@ -1,19 +1,9 @@
 package com.example.pc.movies;
 
 import android.content.Intent;
-import android.content.res.Configuration;
-import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.Toast;
-
-import com.squareup.picasso.Picasso;
-
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class MainActivity extends AppCompatActivity implements MovieListener {
     Boolean Tablet;
@@ -35,6 +25,8 @@ public class MainActivity extends AppCompatActivity implements MovieListener {
             moviesFragment.setMovieListener(this);
             getFragmentManager().beginTransaction().add(R.id.fragmentone, moviesFragment).commit();
         }
+
+
     }
 
     @Override

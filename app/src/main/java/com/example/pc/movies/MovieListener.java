@@ -6,5 +6,5 @@ package com.example.pc.movies;
 
 public interface MovieListener {
 
-    public void setMovie(Movie movie);
+     void setMovie(Movie movie);
 }

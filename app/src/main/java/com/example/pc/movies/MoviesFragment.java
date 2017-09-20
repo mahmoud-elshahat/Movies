@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.activeandroid.query.Select;
@@ -53,18 +54,15 @@ public class MoviesFragment extends Fragment {
     RequestQueue requestQueue;
     GridLayoutManager gridLayoutManager;
     int PAGE_NUMBER = 1;
-    int visibleItemCount;
-    int totalItemCount;
-    int pastVisiblesItems;
     Boolean CAN_ADD_MORE_PAGES;
     static int lastFirstVisiblePosition;
     MovieListener movieListener;
     private EndlessRecyclerViewScrollListener scrollListener;
     String BASE_URL = "https://api.themoviedb.org/3/movie/";
     String KEY = "2a6f7c194d2bc0982f2112ac8aef7f22";
-    final String SORT_TYPE_PARAM = "sort_by";
-    final String PAGE_NUMBER_PARAM = "page";
     final String KEY_PARAM = "api_key";
+
+    TextView notice;
 
     public void setMovieListener(MovieListener movieListener) {
         this.movieListener = movieListener;
@@ -81,8 +79,8 @@ public class MoviesFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         SharedPreferences.Editor editor = getActivity().getSharedPreferences(STATE_MOVIES, MODE_PRIVATE).edit();
-        editor.putBoolean("load",CAN_ADD_MORE_PAGES);
-        editor.commit();
+        editor.putBoolean("load", CAN_ADD_MORE_PAGES);
+        editor.apply();
         try {
             lastFirstVisiblePosition = ((GridLayoutManager) gridView.getLayoutManager()).findFirstCompletelyVisibleItemPosition();
             if (movies != null) {
@@ -90,7 +88,7 @@ public class MoviesFragment extends Fragment {
             }
 
         } catch (Exception e) {
-
+            Log.e("error"," "+e.getMessage());
         }
     }
 
@@ -139,6 +137,7 @@ public class MoviesFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment, container, false);
+        notice = (TextView) root.findViewById(R.id.notify);
         return root;
     }
 
@@ -149,15 +148,14 @@ public class MoviesFragment extends Fragment {
             lastFirstVisiblePosition = ((GridLayoutManager) gridView.getLayoutManager()).findFirstCompletelyVisibleItemPosition();
         }
         SharedPreferences.Editor editor = getActivity().getSharedPreferences(STATE_MOVIES, MODE_PRIVATE).edit();
-        editor.putBoolean("load",CAN_ADD_MORE_PAGES);
+        editor.putBoolean("load", CAN_ADD_MORE_PAGES);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         SharedPreferences prefs = getActivity().getSharedPreferences(STATE_MOVIES, MODE_PRIVATE);
-        Boolean bool = prefs.getBoolean("load",true);
-        CAN_ADD_MORE_PAGES=bool;
+        CAN_ADD_MORE_PAGES = prefs.getBoolean("load", true);
 
         if ((gridView != null)) {
             gridView.getLayoutManager().scrollToPosition(lastFirstVisiblePosition);
@@ -194,9 +192,11 @@ public class MoviesFragment extends Fragment {
         int id = item.getItemId();
         if (id == R.id.rated) {
             if (!isOnline()) {
-                Toast.makeText(getActivity(), "Please check internet Connection", Toast.LENGTH_LONG).show();
-                return false;
+                notice.setText(R.string.internet);
+                notice.setVisibility(View.VISIBLE);
+                return true;
             } else {
+                notice.setVisibility(View.GONE);
                 SORT_TYPE = "top_rated";
                 PAGE_NUMBER = 1;
                 CAN_ADD_MORE_PAGES = true;
@@ -206,8 +206,11 @@ public class MoviesFragment extends Fragment {
 
         } else if (id == R.id.popularity) {
             if (!isOnline()) {
-                Toast.makeText(getActivity(), "Please check internet Connection", Toast.LENGTH_LONG).show();
+                notice.setText(R.string.internet);
+                notice.setVisibility(View.VISIBLE);
+                return false;
             } else {
+                notice.setVisibility(View.GONE);
                 SORT_TYPE = "popular";
                 PAGE_NUMBER = 1;
                 CAN_ADD_MORE_PAGES = true;
@@ -227,7 +230,11 @@ public class MoviesFragment extends Fragment {
             viewAdapter.setMovies(movies);
             gridView.setAdapter(viewAdapter);
             if (movies.size() == 0) {
-                Toast.makeText(getActivity(), "You Don't Have Any Favourite Movies", Toast.LENGTH_SHORT).show();
+                notice.setText(R.string.empty);
+                notice.setVisibility(View.VISIBLE);
+            }
+            else {
+                notice.setVisibility(View.GONE);
             }
         }
         return false;
@@ -245,10 +252,13 @@ public class MoviesFragment extends Fragment {
                 gridView.setLayoutManager(gridLayoutManager);
                 viewAdapter.setMovies(movies);
                 gridView.setAdapter(viewAdapter);
+                notice.setVisibility(View.GONE);
+
 
             } else {
                 movies.clear();
-                Toast.makeText(getActivity(), "You Don't Have Any Favourite Movies", Toast.LENGTH_LONG).show();
+                notice.setText(R.string.empty);
+                notice.setVisibility(View.VISIBLE);
             }
         }
         int rotation = getActivity().getWindowManager().getDefaultDisplay()
@@ -277,7 +287,7 @@ public class MoviesFragment extends Fragment {
         if (!isOnline()) {
             Toast.makeText(getActivity(), "Please check internet Connection", Toast.LENGTH_LONG).show();
         } else {
-            if (movies.size() == 0&&CAN_ADD_MORE_PAGES) {
+            if (movies.size() == 0 && CAN_ADD_MORE_PAGES) {
                 updateScreen();
             } else {
 
@@ -356,7 +366,7 @@ public class MoviesFragment extends Fragment {
                 }
             }
             );
-            if(CAN_ADD_MORE_PAGES){
+            if (CAN_ADD_MORE_PAGES) {
                 requestQueue.add(jsonObjectRequest);
             }
         }
@@ -364,7 +374,7 @@ public class MoviesFragment extends Fragment {
 
     public void addPage() {
         String url = BASE_URL + SORT_TYPE + "?" + KEY_PARAM + "=" + KEY + "&page=" + PAGE_NUMBER;
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONObject>() {
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 try {
@@ -375,7 +385,7 @@ public class MoviesFragment extends Fragment {
                         Movie movie;
                         movie = gson.fromJson(moveisArray.get(i).toString(), Movie.class);
                         movies.add(movie);
-                        Log.v("error", ""+movie.original_title);
+                        Log.v("error", "" + movie.original_title);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -391,7 +401,7 @@ public class MoviesFragment extends Fragment {
             }
         }
         );
-        if(CAN_ADD_MORE_PAGES){
+        if (CAN_ADD_MORE_PAGES) {
             requestQueue.add(jsonObjectRequest);
         }
     }

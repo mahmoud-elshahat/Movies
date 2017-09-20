@@ -2,11 +2,9 @@ package com.example.pc.movies;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,13 +38,6 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.List;
-
-import static android.R.attr.id;
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
-import static android.provider.Contacts.SettingsColumns.KEY;
-import static com.example.pc.movies.R.id.like;
-import static com.example.pc.movies.R.id.listView;
 
 /**
  * Created by PC on 11/1/2016.
@@ -120,9 +111,11 @@ public class DetailsFragment extends Fragment {
 */
 
         title.setText(movie.original_title);
-        release.setText("Release date : " + movie.release_date);
-        rate.setText("Rating : " + movie.vote_average);
-        overview.setText("Overview :\n" + movie.overview);
+        release.setText(getResources().getString(R.string.release)  + movie.release_date);
+
+        rate.setText(getResources().getString(R.string.rating)+ String.valueOf(movie.vote_average));
+
+        overview.setText( getResources().getString(R.string.overview) + movie.overview);
         id = String.valueOf(movie.id);
 
         String ImageUrl = "http://image.tmdb.org/t/p/w185//" + movie.poster_path;
@@ -160,7 +153,7 @@ public class DetailsFragment extends Fragment {
 
 
         url = Base_URL + movie.id + REST_URL + KEY;
-        String Reviewsitems[] = new String[ReviewList.size()];
+      //  String Reviewsitems[] = new String[ReviewList.size()];
         requestQueue = Volley.newRequestQueue(myActivity);
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
@@ -235,7 +228,6 @@ public class DetailsFragment extends Fragment {
     ListView listView;
 
     public void updateData() {
-        ArrayList<String> strs = new ArrayList<String>();
         if (myActivity != null) {
             listView = (ListView) myActivity.findViewById(R.id.listView);
         }
@@ -307,7 +299,7 @@ public class DetailsFragment extends Fragment {
 
         final ArrayList<String> ImagesPath = new ArrayList<>();
         final ArrayList<String> Titles = new ArrayList<>();
-        String YoutubeKey = "AIzaSyCNLdBQOWb8WtMqzOFIplHIrSxh51_ScJw";
+        String YoutubeKey = "AIzaSyCaCaiGDHya5VozIlM47iiSqoX_UmR0tqY";
 
         int Length = keys.size();
 

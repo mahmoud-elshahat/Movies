@@ -2,5 +2,11 @@
     <string name="app_name">Movies</string>
     <string name="menu_refresh">Refresh</string>
     <string name="menu_priority">Priority</string>
+    <string name="internet">Please check internet Connection</string>
+    <string name="empty">You Don\'t Have Any Favourite Movies</string>
+
+    <string name="release">Release Date : \u0020</string>
+    <string name="rating">Rating : \u0020</string>
+    <string name="overview">Overview : \n</string>
 
 </resources>
