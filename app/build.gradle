@@ -17,6 +17,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    buildTypes.each {
+        it.buildConfigField 'String', 'THE_MOVIE_DB_API_TOKEN', MyTheMovieDBApiToken
+    }
 }
 
 dependencies {
@@ -31,6 +34,5 @@ dependencies {
     compile 'com.android.volley:volley:1.0.0'
     testCompile 'junit:junit:4.12'
     compile 'com.google.code.gson:gson:2.6.2'
-    compile 'com.michaelpardo:activeandroid:3.1.0-SNAPSHOT'
 
 }

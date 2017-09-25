@@ -2,7 +2,9 @@ package com.example.pc.movies;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,9 +18,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.activeandroid.ActiveAndroid;
-import com.activeandroid.query.Delete;
-import com.activeandroid.query.Select;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -47,7 +46,6 @@ public class DetailsFragment extends Fragment {
 
     String Base_URL = "http://api.themoviedb.org/3/movie/";
     String REST_URL = "/reviews?api_key=";
-    String KEY = "2a6f7c194d2bc0982f2112ac8aef7f22";
     String url = "";
     ArrayList<Review> ReviewList;
     ArrayList<String> YoutubeVideosKeys;
@@ -127,9 +125,20 @@ public class DetailsFragment extends Fragment {
             likeButton = (LikeButton) root.findViewById(R.id.like);
         }
 
-        Movie exm = new Select().from(Movie.class).where("movieId = ?", movie.id).executeSingle();
+        String URL = "content://com.example.pc.movies.ContactProvider";
+        Uri students = Uri.parse(URL);
+        Cursor c = getActivity().getContentResolver().query(students, null, "id= "+movie.id,null, null);
+        boolean flag=false;
+        if (c.moveToFirst()) {
+            do{
+                flag=true;
+            } while (c.moveToNext());
 
-        if (exm != null) {
+        }
+
+
+
+       if (flag == true) {
             likeButton.setLiked(true);
         }
 
@@ -137,22 +146,44 @@ public class DetailsFragment extends Fragment {
         likeButton.setOnLikeListener(new OnLikeListener() {
             @Override
             public void liked(LikeButton likeButton) {
+                ContentValues values = new ContentValues();
+                values.put(ContactProvider.TITLE,
+                        movie.original_title);
+                values.put(ContactProvider.OVERVIEW,
+                        movie.overview);
+                values.put(ContactProvider.RELEASE_DATE,
+                        movie.release_date);
+                values.put(ContactProvider.VOTE,
+                        movie.vote_average);
+                values.put(ContactProvider.POSTER_PATH,
+                        movie.poster_path);
+                values.put(ContactProvider.ID,
+                        movie.id);
 
-                movie.save();
+                getActivity().getContentResolver().insert(
+                        ContactProvider.CONTENT_URL, values);
+
+
+                //   movie.save();
                 Toast.makeText(myActivity, "Added To Favourite List", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void unLiked(LikeButton likeButton) {
-                ActiveAndroid.initialize(myActivity);
-                new Delete().from(Movie.class).where("movieId = ?", movie.id).execute();
+
+
+                getActivity().getContentResolver().delete(ContactProvider.CONTENT_URL,"id= "+movie.id ,null);
+
+
+
+                //  new Delete().from(Movie.class).where("movieId = ?", movie.id).execute();
                 Toast.makeText(myActivity, "Removed From Favourite List", Toast.LENGTH_SHORT).show();
 
             }
         });
 
 
-        url = Base_URL + movie.id + REST_URL + KEY;
+        url = Base_URL + movie.id + REST_URL + BuildConfig.THE_MOVIE_DB_API_TOKEN;
       //  String Reviewsitems[] = new String[ReviewList.size()];
         requestQueue = Volley.newRequestQueue(myActivity);
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
@@ -185,7 +216,7 @@ public class DetailsFragment extends Fragment {
         );
 
 
-        url = Base_URL + movie.id + "/videos?api_key=" + KEY;
+        url = Base_URL + movie.id + "/videos?api_key=" + BuildConfig.THE_MOVIE_DB_API_TOKEN;
         trailers = new ArrayList<>();
         JsonObjectRequest trialersRequset = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
@@ -264,7 +295,7 @@ public class DetailsFragment extends Fragment {
 
         YoutubeVideosKeys = new ArrayList<>();
 
-        String TrailerUrl = "http://api.themoviedb.org/3/movie/" + id + "/videos?api_key=" + KEY;
+        String TrailerUrl = "http://api.themoviedb.org/3/movie/" + id + "/videos?api_key=" + BuildConfig.THE_MOVIE_DB_API_TOKEN;
 
         JsonObjectRequest TrialersJson = new JsonObjectRequest(Request.Method.GET, TrailerUrl, null, new Response.Listener<JSONObject>() {
             @Override

@@ -10,7 +10,6 @@
         android:icon="@drawable/icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:name="com.activeandroid.app.Application"
 
         android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
 
@@ -37,6 +36,16 @@
             android:name=".MoviesDetails"
             android:screenOrientation="user"
             />
+        
+        <provider
+            android:authorities="com.example.pc.movies.ContactProvider"
+            android:name=".ContactProvider"
+            android:multiprocess="true"
+            android:exported="true"
+
+            />
+
+        
     </application>
 
 </manifest>

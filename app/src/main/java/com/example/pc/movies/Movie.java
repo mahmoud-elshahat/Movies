@@ -3,33 +3,17 @@ package com.example.pc.movies;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.activeandroid.Model;
-import com.activeandroid.annotation.Column;
-import com.activeandroid.annotation.Table;
 import com.google.gson.annotations.Expose;
 
 /**
  * Created by PC on 9/30/2016.
  */
-@Table(name = "movie")
-public class Movie extends Model implements Parcelable {
-    @Expose
-    @Column(name = "poster_path")
+public class Movie  implements Parcelable {
     public String poster_path;
-    @Expose
-    @Column(name = "overview")
     public String overview;
-    @Expose
-    @Column(name = "original_title")
     public String original_title;
-    @Expose
-    @Column(name = "vote_average")
     public double vote_average;
-    @Expose
-    @Column(name = "movieId")
     public int id;
-    @Expose
-    @Column(name = "release_date")
     public String release_date;
 
     public Movie(Parcel input)

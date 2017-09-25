@@ -6,8 +6,10 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -25,7 +27,6 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.activeandroid.query.Select;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -41,7 +42,6 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.List;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -138,6 +138,9 @@ public class MoviesFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment, container, false);
         notice = (TextView) root.findViewById(R.id.notify);
+
+
+
         return root;
     }
 
@@ -157,9 +160,6 @@ public class MoviesFragment extends Fragment {
         SharedPreferences prefs = getActivity().getSharedPreferences(STATE_MOVIES, MODE_PRIVATE);
         CAN_ADD_MORE_PAGES = prefs.getBoolean("load", true);
 
-        if ((gridView != null)) {
-            gridView.getLayoutManager().scrollToPosition(lastFirstVisiblePosition);
-        }
     }
 
     @Override
@@ -220,10 +220,27 @@ public class MoviesFragment extends Fragment {
 
         } else if (id == R.id.favourite) {
             CAN_ADD_MORE_PAGES = false;
-            List<Movie> result;
             movies.clear();
-            result = new Select().from(Movie.class).execute();
-            movies = new ArrayList<>(result);
+
+            String URL = "content://com.example.pc.movies.ContactProvider";
+            Uri students = Uri.parse(URL);
+            Cursor c = getActivity().getContentResolver().query(students, null, null,null, null);
+            if (c.moveToFirst()) {
+                do{
+                    Movie temp=new Movie();
+
+                    temp.original_title=c.getString(c.getColumnIndex(ContactProvider.TITLE));
+                    temp.id=c.getInt(c.getColumnIndex(ContactProvider.ID));
+                    temp.overview=c.getString(c.getColumnIndex(ContactProvider.OVERVIEW));
+                    temp.release_date=c.getString(c.getColumnIndex(ContactProvider.RELEASE_DATE));
+                    temp.vote_average=c.getDouble(c.getColumnIndex(ContactProvider.VOTE));
+                    temp.poster_path=c.getString(c.getColumnIndex(ContactProvider.POSTER_PATH));
+
+                    movies.add(temp);
+                } while (c.moveToNext());
+
+            }
+
             gridView = (RecyclerView) getActivity().findViewById(R.id.recyclerView);
             viewAdapter = new ImagesAdapter(getActivity(), movieListener);
             gridView.setLayoutManager(gridLayoutManager);
@@ -245,9 +262,25 @@ public class MoviesFragment extends Fragment {
     public void onStart() {
         super.onStart();
         if (!CAN_ADD_MORE_PAGES) {
-            List<Movie> result;
-            result = new Select().from(Movie.class).execute();
-            movies = new ArrayList<>(result);
+            movies.clear();
+            String URL = "content://com.example.pc.movies.ContactProvider";
+            Uri students = Uri.parse(URL);
+            Cursor c = getActivity().getContentResolver().query(students, null, null,null, null);
+            if (c.moveToFirst()) {
+                do{
+                    Movie temp=new Movie();
+
+                    temp.original_title=c.getString(c.getColumnIndex(ContactProvider.TITLE));
+                    temp.id=c.getInt(c.getColumnIndex(ContactProvider.ID));
+                    temp.overview=c.getString(c.getColumnIndex(ContactProvider.OVERVIEW));
+                    temp.release_date=c.getString(c.getColumnIndex(ContactProvider.RELEASE_DATE));
+                    temp.vote_average=c.getDouble(c.getColumnIndex(ContactProvider.VOTE));
+                    temp.poster_path=c.getString(c.getColumnIndex(ContactProvider.POSTER_PATH));
+
+                    movies.add(temp);
+                } while (c.moveToNext());
+
+            }
             if (movies.size() != 0) {
                 gridView.setLayoutManager(gridLayoutManager);
                 viewAdapter.setMovies(movies);
@@ -405,4 +438,6 @@ public class MoviesFragment extends Fragment {
             requestQueue.add(jsonObjectRequest);
         }
     }
+
+
 }
