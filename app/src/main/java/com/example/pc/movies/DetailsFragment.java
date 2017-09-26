@@ -9,12 +9,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,7 +57,7 @@ public class DetailsFragment extends Fragment {
     Activity myActivity;
     private final String MY_PREFS_NAME = "favourite";
     ArrayList<Trailer> trailers;
-
+    ScrollView scrollView;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,6 +99,7 @@ public class DetailsFragment extends Fragment {
         TextView title = (TextView) root.findViewById(R.id.title);
         review = (TextView) root.findViewById(R.id.content);
         author = (TextView) root.findViewById(R.id.author);
+        scrollView=(ScrollView)root.findViewById(R.id.scrollView);
      /*   if(movie!=null)
         {
             Toast.makeText(myActivity,"Null",Toast.LENGTH_SHORT).show();
@@ -282,6 +284,19 @@ public class DetailsFragment extends Fragment {
                         startActivity(intent);
                     }
                 });
+                listView.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        scrollView.requestDisallowInterceptTouchEvent(true);
+                        int action = event.getActionMasked();
+                        switch (action) {
+                            case MotionEvent.ACTION_UP:
+                                scrollView.requestDisallowInterceptTouchEvent(false);
+                                break;
+                        }
+                        return false;
+                    }
+                });
             }
         } else {
             if (myActivity != null) {
@@ -387,22 +402,21 @@ public class DetailsFragment extends Fragment {
 
     public static void setListViewHeightBasedOnChildren(ListView listView) {
         ListAdapter listAdapter = listView.getAdapter();
-        if (listAdapter == null)
+        if (listAdapter == null) {
+            // pre-condition
             return;
-
-        int desiredWidth = View.MeasureSpec.makeMeasureSpec(listView.getWidth(), View.MeasureSpec.UNSPECIFIED);
-        int totalHeight = 0;
-        View view = null;
-        for (int i = 0; i < listAdapter.getCount(); i++) {
-            view = listAdapter.getView(i, view, listView);
-            if (i == 0)
-                view.setLayoutParams(new ViewGroup.LayoutParams(desiredWidth, RelativeLayout.LayoutParams.WRAP_CONTENT));
-
-            view.measure(desiredWidth, View.MeasureSpec.UNSPECIFIED);
-            totalHeight += view.getMeasuredHeight();
         }
+
+        int totalHeight = 0;
+        for (int i = 0; i < listAdapter.getCount(); i++) {
+            View listItem = listAdapter.getView(i, null, listView);
+            listItem.measure(0, 0);
+            totalHeight += listItem.getMeasuredHeight();
+        }
+
         ViewGroup.LayoutParams params = listView.getLayoutParams();
         params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
         listView.setLayoutParams(params);
+        listView.requestLayout();
     }
 }

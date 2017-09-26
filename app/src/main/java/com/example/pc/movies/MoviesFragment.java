@@ -16,12 +16,12 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -85,10 +85,12 @@ public class MoviesFragment extends Fragment {
             lastFirstVisiblePosition = ((GridLayoutManager) gridView.getLayoutManager()).findFirstCompletelyVisibleItemPosition();
             if (movies != null) {
                 outState.putParcelableArrayList(STATE_MOVIES, movies);
+                outState.putInt("page", PAGE_NUMBER);
+                outState.putInt("position", lastFirstVisiblePosition);
             }
 
         } catch (Exception e) {
-            Log.e("error"," "+e.getMessage());
+            Log.e("error", " " + e.getMessage());
         }
     }
 
@@ -97,33 +99,21 @@ public class MoviesFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+
         CAN_ADD_MORE_PAGES = true;
-        if (movies == null) {
-            movies = new ArrayList<>();
-        }
-        int rotation = getActivity().getWindowManager().getDefaultDisplay()
-                .getRotation();
-        switch (rotation) {
-            case Surface.ROTATION_0:
-
-                gridLayoutManager = new GridLayoutManager(getActivity(), 2);
-                //gridLayoutManager.setSpanCount(5);
-                break;
-            case Surface.ROTATION_90:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 4);
-
-                break;
-            case Surface.ROTATION_180:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 2);
-                break;
-            case Surface.ROTATION_270:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 4);
-                break;
-            default:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 2);
-                break;
-        }
+        gridLayoutManager = new GridLayoutManager(getActivity(), numberOfColumns());
         requestQueue = Volley.newRequestQueue(getActivity());
+    }
+
+    private int numberOfColumns() {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        // You can change this divider to adjust the size of the poster
+        int widthDivider = 200;
+        int width = displayMetrics.widthPixels;
+        int nColumns = width / widthDivider;
+        if (nColumns < 2) return 2;
+        return nColumns;
     }
 
     @Override
@@ -139,7 +129,17 @@ public class MoviesFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment, container, false);
         notice = (TextView) root.findViewById(R.id.notify);
 
+        if (savedInstanceState != null) {
+            movies = savedInstanceState.getParcelableArrayList(STATE_MOVIES);
+            PAGE_NUMBER = savedInstanceState.getInt("page");
+            lastFirstVisiblePosition = savedInstanceState.getInt("position");
+        }
 
+        if (movies != null && movies.size() != 0) {
+            gridView.setAdapter(new ImagesAdapter(getActivity(), movieListener));
+            ((ImagesAdapter) gridView.getAdapter()).setMovies(movies);
+            gridView.scrollToPosition(lastFirstVisiblePosition);
+        }
 
         return root;
     }
@@ -147,9 +147,6 @@ public class MoviesFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (gridLayoutManager != null & gridView != null) {
-            lastFirstVisiblePosition = ((GridLayoutManager) gridView.getLayoutManager()).findFirstCompletelyVisibleItemPosition();
-        }
         SharedPreferences.Editor editor = getActivity().getSharedPreferences(STATE_MOVIES, MODE_PRIVATE).edit();
         editor.putBoolean("load", CAN_ADD_MORE_PAGES);
     }
@@ -159,15 +156,6 @@ public class MoviesFragment extends Fragment {
         super.onResume();
         SharedPreferences prefs = getActivity().getSharedPreferences(STATE_MOVIES, MODE_PRIVATE);
         CAN_ADD_MORE_PAGES = prefs.getBoolean("load", true);
-
-    }
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        if (savedInstanceState != null) {
-            movies = savedInstanceState.getParcelableArrayList(STATE_MOVIES);
-        }
     }
 
 
@@ -176,11 +164,9 @@ public class MoviesFragment extends Fragment {
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE & gridView != null) {
             gridLayoutManager.setSpanCount(4);
-            gridView.getLayoutManager().scrollToPosition(lastFirstVisiblePosition);
         } else {
             if (gridView != null) {
                 gridLayoutManager.setSpanCount(2);
-                gridView.getLayoutManager().scrollToPosition(lastFirstVisiblePosition);
             }
         }
 
@@ -224,20 +210,21 @@ public class MoviesFragment extends Fragment {
 
             String URL = "content://com.example.pc.movies.ContactProvider";
             Uri students = Uri.parse(URL);
-            Cursor c = getActivity().getContentResolver().query(students, null, null,null, null);
+            Cursor c = getActivity().getContentResolver().query(students, null, null, null, null);
             if (c.moveToFirst()) {
-                do{
-                    Movie temp=new Movie();
+                do {
+                    Movie temp = new Movie();
 
-                    temp.original_title=c.getString(c.getColumnIndex(ContactProvider.TITLE));
-                    temp.id=c.getInt(c.getColumnIndex(ContactProvider.ID));
-                    temp.overview=c.getString(c.getColumnIndex(ContactProvider.OVERVIEW));
-                    temp.release_date=c.getString(c.getColumnIndex(ContactProvider.RELEASE_DATE));
-                    temp.vote_average=c.getDouble(c.getColumnIndex(ContactProvider.VOTE));
-                    temp.poster_path=c.getString(c.getColumnIndex(ContactProvider.POSTER_PATH));
+                    temp.original_title = c.getString(c.getColumnIndex(ContactProvider.TITLE));
+                    temp.id = c.getInt(c.getColumnIndex(ContactProvider.ID));
+                    temp.overview = c.getString(c.getColumnIndex(ContactProvider.OVERVIEW));
+                    temp.release_date = c.getString(c.getColumnIndex(ContactProvider.RELEASE_DATE));
+                    temp.vote_average = c.getDouble(c.getColumnIndex(ContactProvider.VOTE));
+                    temp.poster_path = c.getString(c.getColumnIndex(ContactProvider.POSTER_PATH));
 
                     movies.add(temp);
                 } while (c.moveToNext());
+
 
             }
 
@@ -249,8 +236,7 @@ public class MoviesFragment extends Fragment {
             if (movies.size() == 0) {
                 notice.setText(R.string.empty);
                 notice.setVisibility(View.VISIBLE);
-            }
-            else {
+            } else {
                 notice.setVisibility(View.GONE);
             }
         }
@@ -261,21 +247,31 @@ public class MoviesFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+
+        if (movies != null && movies.size() != 0) {
+            gridLayoutManager.setSpanCount(numberOfColumns());
+
+            return;
+        }
+        gridLayoutManager = new GridLayoutManager(getActivity(), numberOfColumns());
+        movies = new ArrayList<>();
+
+
         if (!CAN_ADD_MORE_PAGES) {
             movies.clear();
             String URL = "content://com.example.pc.movies.ContactProvider";
             Uri students = Uri.parse(URL);
-            Cursor c = getActivity().getContentResolver().query(students, null, null,null, null);
+            Cursor c = getActivity().getContentResolver().query(students, null, null, null, null);
             if (c.moveToFirst()) {
-                do{
-                    Movie temp=new Movie();
+                do {
+                    Movie temp = new Movie();
 
-                    temp.original_title=c.getString(c.getColumnIndex(ContactProvider.TITLE));
-                    temp.id=c.getInt(c.getColumnIndex(ContactProvider.ID));
-                    temp.overview=c.getString(c.getColumnIndex(ContactProvider.OVERVIEW));
-                    temp.release_date=c.getString(c.getColumnIndex(ContactProvider.RELEASE_DATE));
-                    temp.vote_average=c.getDouble(c.getColumnIndex(ContactProvider.VOTE));
-                    temp.poster_path=c.getString(c.getColumnIndex(ContactProvider.POSTER_PATH));
+                    temp.original_title = c.getString(c.getColumnIndex(ContactProvider.TITLE));
+                    temp.id = c.getInt(c.getColumnIndex(ContactProvider.ID));
+                    temp.overview = c.getString(c.getColumnIndex(ContactProvider.OVERVIEW));
+                    temp.release_date = c.getString(c.getColumnIndex(ContactProvider.RELEASE_DATE));
+                    temp.vote_average = c.getDouble(c.getColumnIndex(ContactProvider.VOTE));
+                    temp.poster_path = c.getString(c.getColumnIndex(ContactProvider.POSTER_PATH));
 
                     movies.add(temp);
                 } while (c.moveToNext());
@@ -296,26 +292,7 @@ public class MoviesFragment extends Fragment {
         }
         int rotation = getActivity().getWindowManager().getDefaultDisplay()
                 .getRotation();
-        switch (rotation) {
-            case Surface.ROTATION_0:
 
-                gridLayoutManager = new GridLayoutManager(getActivity(), 2);
-                //gridLayoutManager.setSpanCount(5);
-                break;
-            case Surface.ROTATION_90:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 4);
-
-                break;
-            case Surface.ROTATION_180:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 2);
-                break;
-            case Surface.ROTATION_270:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 4);
-                break;
-            default:
-                gridLayoutManager = new GridLayoutManager(getActivity(), 2);
-                break;
-        }
 
         if (!isOnline()) {
             Toast.makeText(getActivity(), "Please check internet Connection", Toast.LENGTH_LONG).show();
