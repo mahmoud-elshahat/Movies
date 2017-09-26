@@ -160,7 +160,7 @@ public class MoviesFragment extends Fragment {
 
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(Configuration newConfig) {   
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE & gridView != null) {
             gridLayoutManager.setSpanCount(4);
