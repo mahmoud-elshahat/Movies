@@ -1,6 +1,6 @@
 # Movies - Android App
 
-Udacity nanodegree first project .
+Udacity android developer nanodegree project .
 
 ## Demo
 
